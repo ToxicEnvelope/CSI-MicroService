@@ -1,15 +1,21 @@
 from fastapi import FastAPI, Request, Response
-from enums import StatusType
+from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
+
+from enums import StatusType, MediaType
 from common.datatypes import Fingerprints
 from common.database import db_session
-from lambdas import gen_UUID, EncodeAES, DecodeAES, EncodeHeader, DecodeHeader
+from lambdas import gen_UUID, EncodeAES, DecodeAES, EncodeHeader, DecodeHeader, stamp
 from typing import Optional
 from services.ipapi_service import IPAPIService
 from services.tip_service import TIPService
-from socket import gethostbyaddr
 
 
 app = FastAPI()
+app.add_middleware(HTTPSRedirectMiddleware)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
 @app.middleware('http')
@@ -32,8 +38,10 @@ async def add_fingerprint_record(request: Request, call_next):
     longitude = ipapi_data['longitude'] if 'longitude' in ipapi_data else None
     location = ipapi_data['location'] if 'location' in ipapi_data else None
     security = ipapi_data['security'] if 'security' in ipapi_data else None
-    fingerprint = Fingerprints(uid, ip, hostname, ip_type, continent_code, continent_name, country_code, country_name,
-                               region_code, region_name, city, zipcode, latitude, longitude, location, security)
+    fingerprint = Fingerprints(uid=uid, ip=ip, hostname=hostname, ip_type=ip_type, continent_code=continent_code,
+                               country_name=continent_name, country_code=country_code, continent_name=country_name,
+                               region_code=region_code, region_name=region_name, city=city, zipcode=zipcode,
+                               latitude=latitude, longitude=longitude, location=location, security=security)
     db_session.add(fingerprint)
     db_session.commit()
     return response
@@ -57,12 +65,10 @@ async def add_recon_headers(request: Request, call_next):
     response.headers["X-RECON-LOCATION"] = EncodeHeader(data=fingerprint.location).decode()
     response.headers["X-RECON-SECURITY"] = EncodeHeader(data=fingerprint.security).decode()
 
-    resolved_data = gethostbyaddr(request.client.host)
-    hostname, arpa_hostname, public_ip = resolved_data[0], resolved_data[1][0], resolved_data[2][0]
-    tip_data = await tip_recon(hostname)
-    print("HOSTNAME -> \n", tip_data)
-    tip_data = await tip_recon(arpa_hostname)
-    print("ARPA_HOSTNAME -> \n", tip_data)
+    # results = await vulnerability_scan(request.client.host)
+    # hostname = [results.get(k) for k in results.keys() if k.find('hostname')].pop()
+    # tip_data = await tip_recon(hostname)
+    # response.headers["X-RECON-THREAT-INTELLIGENCE-DATA"] = EncodeHeader(data=await vulnerability_scan(request.client.host)).decode()
 
     return response
 
@@ -80,18 +86,24 @@ async def tip_recon(domain):
 
 @app.get("/")
 def index():
-    content = {"status": None, "message": None}
+    content = {"status": None, "timestamp": None, "message": None}
     try:
         content["status"] = StatusType.SUCCESS.value
+        content["timestamp"] = stamp()
         content["message"] = "data collected"
-        return content
+        json = jsonable_encoder(obj=content)
+        return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value)
     except Exception as e:
         content["status"] = StatusType.FAILED.value
+        content["timestamp"] = stamp()
         content["message"] = "nothing happens"
-        return content
+        json = jsonable_encoder(obj=content)
+        return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value)
 
 
 if __name__ == '__main__':
-    import uvicorn
-
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    import uvicorn, os
+    from common import config
+    crt = os.path.join(config.get_root_path(), 'resources', 'localhost.crt')
+    pem = os.path.join(config.get_root_path(), 'resources', 'localhost.key')
+    uvicorn.run(app, host="0.0.0.0", port=8443, ssl_certfile=crt, ssl_keyfile=pem)
