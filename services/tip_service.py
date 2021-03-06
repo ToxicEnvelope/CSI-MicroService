@@ -46,8 +46,8 @@ class TIPService(BaseAPI):
 
     @staticmethod
     def preform():
-        json_data = TIPService.digest(self=TIPService, data=TIPService.__gathered_intelligent_to_response__)
-        return json_data
+        if TIPService:
+            return TIPService.__gathered_intelligent_to_response__
 
     @classmethod
     def __general_info(cls):
