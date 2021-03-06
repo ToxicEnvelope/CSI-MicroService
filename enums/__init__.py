@@ -5,6 +5,7 @@ class StatusType(Enum):
     SUCCESS = "success"
     FAILED = "failed"
     PENDING = "pending"
+    TRACKED = "tracked"
 
 
 class MediaType(Enum):
