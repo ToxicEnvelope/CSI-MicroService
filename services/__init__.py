@@ -14,6 +14,3 @@ class BaseAPI:
     def get(self, url, **kwargs):
         response = requests.get(url=url, *kwargs)
         return response
-
-    def digest(self, data):
-        return json.dumps(data)
