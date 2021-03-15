@@ -185,6 +185,33 @@ async def task(request: Request, t: str):
     return templates.TemplateResponse(template, {"request": request})
 
 
+@app.get("/objectify/")
+def objectify(url: str = lambda x: EncodeHeader(x),
+              o: str = lambda x: EncodeHeader(x),
+              p: str = lambda x: EncodeHeader(x),
+              h: str = lambda x: EncodeHeader(x)):
+    try:
+        content = {
+            "status": StatusType.SUCCESS.value,
+            "timestamp": stamp(),
+            "objectified": {
+                "url": url,
+                "o": o,
+                "p": p,
+                "h": h
+            }
+        }
+        json = jsonable_encoder(obj=content)
+        return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=200)
+    except Exception:
+        content = {
+            "status": StatusType.FAILED.value,
+            "timestamp": stamp()
+        }
+        json = jsonable_encoder(obj=content)
+        return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=404)
+
+
 if __name__ == '__main__':
     import uvicorn
     import os
