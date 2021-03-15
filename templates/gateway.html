@@ -2,10 +2,41 @@
 <html lang="en,ru,zh">
     <head>
         <title>The Gateway</title>
+        <script src="../static/js/common.js"></script>
+        <link href="../static/css/common.css" rel="stylesheet">
     </head>
     <body>
+        <h1>Welcome</h1>
         <div id="data-container">
+            <table>
+                <tr>
+                    <th>IP Address</th>
+                    <th>Coordination</th>
+                    <th>Country</th>
+                    <th>City</th>
+                </tr>
+                <tr>
+                    <td id="ip"></td>
+                    <td id="deg"><span id="lat"></span> , <span id="lon"></span></td>
+                    <td id="country"></td>
+                    <td id="city"></td>
+                </tr>
+            </table>
+            <br/>
+            <br/>
+            <br/>
+            <h3>Surf Anonymously</h3><p>IT MIGHT TAKE SOME TIME TO LOAD ANY PAGE WHEN USING OUR GATEWAY</p>
+            <center>
+            <input type="text" id="anon-proxy" name="anon-proxy" placeholder="navigate to https://www.mydomain.com"><button id="sub-btn" type="submit"></button>
 
+            </center>
         </div>
+        <footer>
+            <ul>
+                <li><a href="/anonymous/facebook"><img alt="fb" title="Facebook"  src="../static/svg/facebook.svg"></a></li>
+                <li><a href="/anonymous/google"><img alt="gplus" title="GooglePlus" src="../static/svg/google-plus.svg"></a></li>
+                <li><a href="/anonymous/twitter"><img alt="twitter" title="Twitter" src="../static/svg/twitter.svg"></a></li>
+            </ul>
+        </footer>
     </body>
 </html>
