@@ -88,4 +88,4 @@ class TIPService(BaseAPI):
 
 if __name__ == '__main__':
     tip = TIPService()
-    print(tip.check_domain("facebook.com").gather().preform())
+    print(tip.check_domain("8.8.8.8").gather().preform())
