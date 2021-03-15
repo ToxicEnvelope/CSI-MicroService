@@ -186,19 +186,16 @@ async def task(request: Request, t: str):
 
 
 @app.get("/objectify/")
-def objectify(url: str = lambda x: EncodeHeader(x),
-              o: str = lambda x: EncodeHeader(x),
-              p: str = lambda x: EncodeHeader(x),
-              h: str = lambda x: EncodeHeader(x)):
+def objectify(url: str = None, o: str = None, p: str = None, h: str = None):
     try:
         content = {
             "status": StatusType.SUCCESS.value,
             "timestamp": stamp(),
             "objectified": {
                 "url": url,
-                "o": o,
-                "p": p,
-                "h": h
+                "o": EncodeHeader(o),
+                "p": EncodeHeader(p),
+                "h": EncodeHeader(h)
             }
         }
         json = jsonable_encoder(obj=content)
