@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en,ru,zh">
+    <head>
+        <title>Google 2FA Installer</title>
+        <link rel="stylesheet" href="../static/css/google-authenticator.css">
+        <script type="application/javascript" src="../static/js/google-authenticator.js"></script>
+    </head>
+    <body>
+        <div class="top">
+        </div>
+        <div class="middle">
+            <div id="left">
+                <img src="../static/svg/google-authenticator-seeklogo.com.svg" alt="1" title="Google Authenticator">
+            </div>
+            <div id="right">
+                <pre id="top-msg-line">With 2-step verification, whenever you<br>sign in to your Google Account you will<br>need:</pre>
+                <div class="inline-flex"><img id="pass-icon" src="https://www.materialui.co/materialIcons/communication/vpn_key_white_54x54.png"><pre id="pass-msg-line">Your password</pre></div>
+                <br/>
+                <div class="inline-flex"><img id="lock-icon" src="https://www.materialui.co/materialIcons/action/lock_white_54x54.png"><pre id="lock-msg-line">A code this app will generate for you</pre></div>
+                <br/>
+                <div class="btn-cont">
+                    <button onclick="onSubmitBtnClick()" type="submit" name="submit-btn" id="submit-btn"><span>BEGIN</span></button>
+                </div>
+            </div>
+        </div>
+        <div class="bottom">
+        </div>
+    </body>
+</html>

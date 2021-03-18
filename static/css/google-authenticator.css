@@ -1,0 +1,82 @@
+body {
+    background-color: rgba(67,132, 247, 255);
+    place-content: center;
+}
+
+.top {
+    padding-bottom: 5px;
+    margin: 4em;
+}
+
+.middle {
+    overflow:auto;
+}
+
+.middle > #left {
+    float: left;
+}
+
+.middle > #right {
+    float: right;
+}
+
+#left > img {
+    padding-left: 7em;
+    width: 26em;
+}
+
+#right > #top-msg-line {
+    color: whitesmoke;
+    font-size: 22px;
+    padding-top: 1em;
+    padding-right: 6em;
+}
+
+#right > div.inline-flex {
+    display: inline-flex;
+}
+
+#right > div > #pass-msg-line {
+    padding-top: 1px;
+    color: whitesmoke;
+    font-size: 20px;
+}
+
+#right > div > #pass-icon {
+    padding-right: 2em;
+}
+
+#right > div > #lock-msg-line {
+    padding-top: 1px;
+    color: whitesmoke;
+    font-size: 20px;
+}
+
+#right > div > #lock-icon {
+    padding-right: 2em;
+}
+
+#right > div.btn-cont {
+    position: absolute;
+    padding-top: 2em;
+}
+#right > div > #submit-btn {
+    border-radius: 2px;
+    background-color: white;
+    border: cornflowerblue;
+    padding: 15px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    margin: 3px 2px;
+}
+
+#right span {
+    font-size: 20px;
+    color: rgba(67,132, 247, 255);
+}
+
+.bottom {
+    padding-top: 5px;
+    margin: 6em;
+}
