@@ -1,5 +1,8 @@
-from sqlalchemy import Column, Text, JSON, Float
+from sqlalchemy import Column, Text, JSON, Float, DateTime
 from common.database import Base
+from datetime import datetime
+from uuid import uuid5, NAMESPACE_URL
+from lambdas import stamp
 
 
 class Fingerprints(Base):
@@ -63,3 +66,24 @@ class Fingerprints(Base):
 
     def __repr__(self):
         return '<Fingerprint %r>' % self.uid
+
+
+class Targets(Base):
+    __tablename__ = "targets_tbl"
+    tid = Column(Text(), unique=True, primary_key=True)
+    email = Column(Text(), unique=False, nullable=False)
+    first_name = Column(Text(), unique=False, nullable=False)
+    last_name = Column(Text(), unique=False, nullable=False)
+    time_created = Column(DateTime(), unique=False, nullable=False)
+    token = Column(Text(), unique=False, nullable=False)
+
+    def __init__(self, email=None, first_name=None, last_name=None, token=None):
+        self.tid = uuid5(NAMESPACE_URL, f'{email}-{stamp()}').__str__()
+        self.email = email
+        self.first_name = first_name
+        self.last_name = last_name
+        self.token = token
+        self.time_created = datetime.now()
+
+    def __repr__(self):
+        return '<Target %r>' % self.tid
