@@ -34,7 +34,7 @@ class Config(object):
 
     @staticmethod
     def get_root_path():
-        return f"{__ROOT_DIR__}"
+        return __ROOT_DIR__
 
     @staticmethod
     def get_ip_api_token():
@@ -47,6 +47,10 @@ class Config(object):
         with open(join(__ROOT_DIR__, 'resources', 'config.json')) as cfg:
             data = load(cfg)
             return data['Tokens']['TIP_API']
+
+    @staticmethod
+    def get_payloads(payload_name):
+        return join(__ROOT_DIR__, "payloads", payload_name)
 
 global config
 config = Config.Instance()
