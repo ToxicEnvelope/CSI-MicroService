@@ -1,5 +1,4 @@
 import socket
-
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -8,10 +7,8 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.responses import FileResponse
-
 from datetime import datetime
 from os.path import exists
-
 from enums import StatusType, MediaType
 from common.datatypes import Fingerprints, Targets
 from common.database import db_session
