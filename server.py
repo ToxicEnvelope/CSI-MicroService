@@ -1,3 +1,5 @@
+import socket
+
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -35,7 +37,7 @@ async def add_fingerprint_record(request: Request, call_next):
         ipapi_data = await ipapi_recon(request.client.host)
         uid = gen_UUID(request.client.host).__str__()
         ip = ipapi_data['ip'] if 'ip' in ipapi_data else None
-        hostname = ipapi_data['hostname'] if 'hostname' in ipapi_data else None
+        hostname = ipapi_data['hostname'] if 'hostname' in ipapi_data else socket.gethostbyname_ex(ip)[0]
         ip_type = ipapi_data['type'] if 'type' in ipapi_data else None
         continent_code = ipapi_data['continent_code'] if 'continent_code' in ipapi_data else None
         continent_name = ipapi_data['continent_name'] if 'continent_name' in ipapi_data else None
@@ -48,7 +50,6 @@ async def add_fingerprint_record(request: Request, call_next):
         latitude = ipapi_data['latitude'] if 'latitude' in ipapi_data else None
         longitude = ipapi_data['longitude'] if 'longitude' in ipapi_data else None
         location = ipapi_data['location'] if 'location' in ipapi_data else None
-        security = ipapi_data['security'] if 'security' in ipapi_data else None
 
         tip_data = await tip_recon(hostname)
         infra_analysis = tip_data['infrastructureAnalysis']
@@ -64,7 +65,7 @@ async def add_fingerprint_record(request: Request, call_next):
         fingerprint = Fingerprints(uid=uid, ip=ip, hostname=hostname, ip_type=ip_type, continent_code=continent_code,
                                    country_name=country_name, country_code=country_code, continent_name=continent_name,
                                    region_code=region_code, region_name=region_name, city=city, zipcode=zipcode,
-                                   latitude=latitude, longitude=longitude, location=location, security=security,
+                                   latitude=latitude, longitude=longitude, location=location, security='EMPTY',
                                    time_created=datetime.now().ctime(), request_path=req_path,
                                    request_params=req_params, infra_analysis=infra_analysis,
                                    ssl_cert_chain=ssl_cert_chain, ssl_configuration=ssl_configuration,
@@ -126,8 +127,8 @@ async def add_recon_headers(request: Request, call_next):
 
 async def ipapi_recon(host, lang='en'):
     try:
-        data = IPAPIService().check_host(host).with_hostname().with_security().with_language(lang=lang).as_json() \
-            .build().preform()
+        ipapi = IPAPIService()
+        data = ipapi.check_host(host).with_language().with_fields().as_json().build().preform()
         return data
     except Exception:
         content = {
@@ -141,7 +142,8 @@ async def ipapi_recon(host, lang='en'):
 
 async def tip_recon(domain):
     try:
-        data = TIPService().check_domain(domain_name=domain).gather().preform()
+        tip = TIPService()
+        data = tip.check_domain(domain_name=domain).gather().preform()
         return data
     except Exception:
         content = {
@@ -260,7 +262,4 @@ async def download(binary: str = None):
 
 if __name__ == '__main__':
     import uvicorn
-    import os
-    pem = os.path.join(config.get_root_path(), 'resources', '_.teslathreat.net_private_key.key')
-    crt = os.path.join(config.get_root_path(), 'resources', 'teslathreat.net_ssl_certificate.cer')
-    uvicorn.run(app, host="0.0.0.0", port=8443, ssl_certfile=crt, ssl_keyfile=pem)
+    uvicorn.run(app, host="0.0.0.0", port=8443)
