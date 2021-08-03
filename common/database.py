@@ -13,5 +13,12 @@ db_session = scoped_session(sessionmaker(bind=__engine, autocommit=False, autofl
 
 Base = declarative_base()
 Base.query = db_session.query_property()
-Base.metadata.create_all(bind=__engine)
-print("[+] Connected to Database successfully.")
+
+
+def ini_db():
+    try:
+        Base.metadata.create_all(bind=__engine)
+        print("[+] Connected to Database successfully.")
+    except:
+        return False
+    return True

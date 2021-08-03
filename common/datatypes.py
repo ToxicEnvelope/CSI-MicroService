@@ -1,3 +1,5 @@
+import json
+
 from sqlalchemy import Column, Text, JSON, Float, DateTime
 from common.database import Base
 from datetime import datetime
@@ -19,19 +21,19 @@ class Fingerprints(Base):
     region_code = Column(Text(), unique=False, nullable=True, default="EMPTY")
     region_name = Column(Text(), unique=False, nullable=True, default="EMPTY")
     zipcode = Column(Text(), unique=False, nullable=True, default="EMPTY")
-    latitude = Column(Float(), unique=False, nullable=True, default="EMPTY")
-    longitude = Column(Float(), unique=False, nullable=True, default="EMPTY")
-    location = Column(JSON(), unique=False, nullable=True, default="EMPTY")
-    security = Column(JSON(), unique=False, nullable=True, default="EMPTY")
+    latitude = Column(Float(), unique=False, nullable=True, default=0.0)
+    longitude = Column(Float(), unique=False, nullable=True, default=0.0)
+    location = Column(JSON(), unique=False, nullable=True, default=json.dumps({}))
+    security = Column(JSON(), unique=False, nullable=True, default=json.dumps({}))
     time_created = Column(Text(), unique=True, nullable=True, default="EMPTY")
     request_path = Column(Text(), unique=False, nullable=True, default="EMPTY")
     request_params = Column(Text(), unique=False, nullable=True, default="EMPTY")
-    ssl_cert_chain = Column(JSON(), unique=False, nullable=True, default="EMPTY")
-    ssl_configuration = Column(JSON(), unique=False, nullable=True, default="EMPTY")
-    infra_analysis = Column(JSON(), unique=False, nullable=True, default="EMPTY")
-    malware_check = Column(JSON(), unique=False, nullable=True, default="EMPTY")
-    connected_domains = Column(JSON(), unique=False, nullable=True, default="EMPTY")
-    reputation = Column(JSON(), unique=False, nullable=True, default="EMPTY")
+    ssl_cert_chain = Column(JSON(), unique=False, nullable=True, default=json.dumps({}))
+    ssl_configuration = Column(JSON(), unique=False, nullable=True, default=json.dumps({}))
+    infra_analysis = Column(JSON(), unique=False, nullable=True, default=json.dumps({}))
+    malware_check = Column(JSON(), unique=False, nullable=True, default=json.dumps({}))
+    connected_domains = Column(JSON(), unique=False, nullable=True, default=json.dumps({}))
+    reputation = Column(JSON(), unique=False, nullable=True, default=json.dumps({}))
 
     def __init__(self, uid=None, ip=None, hostname=None, city=None, country_code=None, country_name=None, ip_type=None,
                  continent_code=None, continent_name=None, region_code=None, region_name=None, zipcode=None,

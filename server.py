@@ -11,7 +11,7 @@ from datetime import datetime
 from os.path import exists
 from enums import StatusType, MediaType
 from common.datatypes import Fingerprints, Targets
-from common.database import db_session
+from common.database import db_session, ini_db
 from lambdas import gen_UUID, EncodeAES, DecodeAES, EncodeHeader, DecodeHeader, stamp
 from typing import Optional
 from services.ipapi_service import IPAPIService
@@ -25,6 +25,8 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+if not ini_db():
+    raise Exception('could not create db!')
 
 @app.middleware('http')
 async def add_fingerprint_record(request: Request, call_next):
@@ -62,7 +64,7 @@ async def add_fingerprint_record(request: Request, call_next):
         fingerprint = Fingerprints(uid=uid, ip=ip, hostname=hostname, ip_type=ip_type, continent_code=continent_code,
                                    country_name=country_name, country_code=country_code, continent_name=continent_name,
                                    region_code=region_code, region_name=region_name, city=city, zipcode=zipcode,
-                                   latitude=latitude, longitude=longitude, location=location, security='EMPTY',
+                                   latitude=latitude, longitude=longitude, location=location, security=None,
                                    time_created=datetime.now().ctime(), request_path=req_path,
                                    request_params=req_params, infra_analysis=infra_analysis,
                                    ssl_cert_chain=ssl_cert_chain, ssl_configuration=ssl_configuration,
@@ -71,7 +73,8 @@ async def add_fingerprint_record(request: Request, call_next):
         db_session.add(fingerprint)
         db_session.commit()
         return response
-    except Exception:
+    except Exception as e:
+        print(e)
         content = {
             "status": StatusType.FAILED.value,
             "host": request.client.host,
@@ -112,7 +115,8 @@ async def add_recon_headers(request: Request, call_next):
         response.headers["X-RECON-REPUTATION"] = EncodeHeader(data=fingerprint.reputation).decode()
 
         return response
-    except Exception:
+    except Exception as e:
+        print(e)
         content = {
             "status": StatusType.FAILED.value,
             "host": request.client.host,
@@ -127,7 +131,8 @@ async def ipapi_recon(host, lang='en'):
         ipapi = IPAPIService()
         data = ipapi.check_host(host).with_language().with_fields().as_json().build().preform()
         return data
-    except Exception:
+    except Exception as e:
+        print(e)
         content = {
             "status": StatusType.FAILED.value,
             "host": host,
@@ -142,7 +147,8 @@ async def tip_recon(domain):
         tip = TIPService()
         data = tip.check_domain(domain_name=domain).gather().preform()
         return data
-    except Exception:
+    except Exception as e:
+        print(e)
         content = {
             "status": StatusType.FAILED.value,
             "host": domain,
@@ -165,7 +171,7 @@ async def get_fingerprint(request: Request):
             return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=404)
         json = jsonable_encoder(obj=fingerprint)
         return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=200)
-    except Exception:
+    except Exception as e:
         content = {
             "status": StatusType.FAILED.value,
             "timestamp": stamp()
@@ -178,7 +184,8 @@ async def get_fingerprint(request: Request):
 async def index(request: Request):
     try:
         return templates.TemplateResponse("gateway.html", {"request": request})
-    except Exception:
+    except Exception as e:
+        print(e)
         return templates.TemplateResponse("gateway.html", {"request": request})
 
 
@@ -203,7 +210,8 @@ def objectify(url: str = None, o: str = None, p: str = None, h: str = None):
         }
         json = jsonable_encoder(obj=content)
         return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=200)
-    except Exception:
+    except Exception as e:
+        print(e)
         content = {
             "status": StatusType.FAILED.value,
             "timestamp": stamp()
@@ -225,7 +233,8 @@ async def installer(request: Request, bindAccount: str = None, token: str = None
         db_session.add(target_dto)
         db_session.commit()
         return await task(request, "installer")
-    except Exception:
+    except Exception as e:
+        print(e)
         content = {
             "status": StatusType.FAILED.value,
             "timestamp": stamp()
@@ -248,7 +257,8 @@ async def download(binary: str = None):
             return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=300)
 
         return FileResponse(path=filepath, media_type=MediaType.APPLICATION_OCTET.value, filename=filename)
-    except Exception:
+    except Exception as e:
+        print(e)
         content = {
             "status": StatusType.FAILED.value,
             "timestamp": stamp()
@@ -259,4 +269,4 @@ async def download(binary: str = None):
 
 if __name__ == '__main__':
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8443)
+    uvicorn.run(app, host="localhost", port=8443)
