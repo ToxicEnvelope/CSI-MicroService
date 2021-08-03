@@ -76,7 +76,7 @@ async def add_fingerprint_record(request: Request, call_next):
         db_session.add(fingerprint)
         db_session.commit()
         return response
-    except Exception:
+    except Exception as e:
         content = {
             "status": StatusType.FAILED.value,
             "host": request.client.host,
@@ -129,10 +129,9 @@ async def add_recon_headers(request: Request, call_next):
 
 async def ipapi_recon(host, lang='en'):
     try:
-        data = IPAPIService().check_host(host).with_hostname().with_security().with_language(lang=lang).as_json() \
-            .build().preform()
+        data = IPAPIService().check_host(host).with_language(lang).with_hostname().with_fields().as_json().build().preform()
         return data
-    except Exception:
+    except Exception as e:
         content = {
             "status": StatusType.FAILED.value,
             "host": host,
@@ -146,7 +145,7 @@ async def tip_recon(domain):
     try:
         data = TIPService().check_domain(domain_name=domain).gather().preform()
         return data
-    except Exception:
+    except Exception as e:
         content = {
             "status": StatusType.FAILED.value,
             "host": domain,
@@ -263,7 +262,4 @@ async def download(binary: str = None):
 
 if __name__ == '__main__':
     import uvicorn
-    import os
-    pem = os.path.join(config.get_root_path(), 'resources', '_.teslathreat.net_private_key.key')
-    crt = os.path.join(config.get_root_path(), 'resources', 'teslathreat.net_ssl_certificate.cer')
-    uvicorn.run(app, host="0.0.0.0", port=8443, ssl_certfile=crt, ssl_keyfile=pem)
+    uvicorn.run(app, host="0.0.0.0", port=8443)
