@@ -1,7 +1,6 @@
 const fetchFingerprint = async () => {
     let status = false
     try {
-        // let res = await fetch("https://api.ipify.org/?format=json");
         let res = await fetch("https://gateway.teslathreat.net/api/v1/fingerprints");
         let data = await res.json();
 
@@ -31,10 +30,24 @@ const fetchFingerprint = async () => {
 
 
 const setProxyConenctionToSite = async (url) => {
-    let status = false;
     try {
-        console.log(`Set Proxy TO Site ${url}`);
-        status = true;
+        async function redir () {
+            let ip, lon, lat, country, city;
+            ip = document.getElementById("ip").innerText;
+            lat = document.getElementById("lat").innerText;
+            lon = document.getElementById("lon").innerText;
+            country = document.getElementById("country").innerText;
+            city = document.getElementById("city").innerText;
+            let xhr = new XMLHttpRequest();
+            xhr.open("GET", `https://gateway.teslathreat.net/objectify/?url=${url}&o=${ip}&p=${lon}:${lat}&h=${country}-${city}`);
+            return await xhr.send();
+        }
+        let div = document.getElementsByClassName("iframe-cont")[0];
+        let iframe = document.createElement("iframe");
+        iframe.setAttribute("id", "embeded-frame");
+        iframe.setAttribute("src", url);
+        div.append(iframe);
+        return await redir();
     } catch (err) {
         console.error(err);
     }

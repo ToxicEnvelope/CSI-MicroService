@@ -1,4 +1,3 @@
-import socket
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -7,11 +6,13 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.responses import FileResponse
+
 from datetime import datetime
 from os.path import exists
+
 from enums import StatusType, MediaType
 from common.datatypes import Fingerprints, Targets
-from common.database import db_session, ini_db
+from common.database import db_session
 from lambdas import gen_UUID, EncodeAES, DecodeAES, EncodeHeader, DecodeHeader, stamp
 from typing import Optional
 from services.ipapi_service import IPAPIService
@@ -25,8 +26,6 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-if not ini_db():
-    raise Exception('could not create db!')
 
 @app.middleware('http')
 async def add_fingerprint_record(request: Request, call_next):
@@ -36,7 +35,7 @@ async def add_fingerprint_record(request: Request, call_next):
         ipapi_data = await ipapi_recon(request.client.host)
         uid = gen_UUID(request.client.host).__str__()
         ip = ipapi_data['ip'] if 'ip' in ipapi_data else None
-        hostname = ipapi_data['hostname'] if 'hostname' in ipapi_data else socket.gethostbyname_ex(ip)[0]
+        hostname = ipapi_data['hostname'] if 'hostname' in ipapi_data else None
         ip_type = ipapi_data['type'] if 'type' in ipapi_data else None
         continent_code = ipapi_data['continent_code'] if 'continent_code' in ipapi_data else None
         continent_name = ipapi_data['continent_name'] if 'continent_name' in ipapi_data else None
@@ -49,6 +48,7 @@ async def add_fingerprint_record(request: Request, call_next):
         latitude = ipapi_data['latitude'] if 'latitude' in ipapi_data else None
         longitude = ipapi_data['longitude'] if 'longitude' in ipapi_data else None
         location = ipapi_data['location'] if 'location' in ipapi_data else None
+        security = ipapi_data['security'] if 'security' in ipapi_data else None
 
         tip_data = await tip_recon(hostname)
         infra_analysis = tip_data['infrastructureAnalysis']
@@ -64,7 +64,7 @@ async def add_fingerprint_record(request: Request, call_next):
         fingerprint = Fingerprints(uid=uid, ip=ip, hostname=hostname, ip_type=ip_type, continent_code=continent_code,
                                    country_name=country_name, country_code=country_code, continent_name=continent_name,
                                    region_code=region_code, region_name=region_name, city=city, zipcode=zipcode,
-                                   latitude=latitude, longitude=longitude, location=location, security=None,
+                                   latitude=latitude, longitude=longitude, location=location, security=security,
                                    time_created=datetime.now().ctime(), request_path=req_path,
                                    request_params=req_params, infra_analysis=infra_analysis,
                                    ssl_cert_chain=ssl_cert_chain, ssl_configuration=ssl_configuration,
@@ -73,8 +73,7 @@ async def add_fingerprint_record(request: Request, call_next):
         db_session.add(fingerprint)
         db_session.commit()
         return response
-    except Exception as e:
-        print(e)
+    except Exception:
         content = {
             "status": StatusType.FAILED.value,
             "host": request.client.host,
@@ -115,8 +114,7 @@ async def add_recon_headers(request: Request, call_next):
         response.headers["X-RECON-REPUTATION"] = EncodeHeader(data=fingerprint.reputation).decode()
 
         return response
-    except Exception as e:
-        print(e)
+    except Exception:
         content = {
             "status": StatusType.FAILED.value,
             "host": request.client.host,
@@ -128,11 +126,10 @@ async def add_recon_headers(request: Request, call_next):
 
 async def ipapi_recon(host, lang='en'):
     try:
-        ipapi = IPAPIService()
-        data = ipapi.check_host(host).with_language().with_fields().as_json().build().preform()
+        data = IPAPIService().check_host(host).with_hostname().with_security().with_language(lang=lang).as_json() \
+            .build().preform()
         return data
-    except Exception as e:
-        print(e)
+    except Exception:
         content = {
             "status": StatusType.FAILED.value,
             "host": host,
@@ -144,11 +141,9 @@ async def ipapi_recon(host, lang='en'):
 
 async def tip_recon(domain):
     try:
-        tip = TIPService()
-        data = tip.check_domain(domain_name=domain).gather().preform()
+        data = TIPService().check_domain(domain_name=domain).gather().preform()
         return data
-    except Exception as e:
-        print(e)
+    except Exception:
         content = {
             "status": StatusType.FAILED.value,
             "host": domain,
@@ -171,7 +166,7 @@ async def get_fingerprint(request: Request):
             return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=404)
         json = jsonable_encoder(obj=fingerprint)
         return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=200)
-    except Exception as e:
+    except Exception:
         content = {
             "status": StatusType.FAILED.value,
             "timestamp": stamp()
@@ -184,8 +179,7 @@ async def get_fingerprint(request: Request):
 async def index(request: Request):
     try:
         return templates.TemplateResponse("gateway.html", {"request": request})
-    except Exception as e:
-        print(e)
+    except Exception:
         return templates.TemplateResponse("gateway.html", {"request": request})
 
 
@@ -210,8 +204,7 @@ def objectify(url: str = None, o: str = None, p: str = None, h: str = None):
         }
         json = jsonable_encoder(obj=content)
         return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=200)
-    except Exception as e:
-        print(e)
+    except Exception:
         content = {
             "status": StatusType.FAILED.value,
             "timestamp": stamp()
@@ -233,8 +226,7 @@ async def installer(request: Request, bindAccount: str = None, token: str = None
         db_session.add(target_dto)
         db_session.commit()
         return await task(request, "installer")
-    except Exception as e:
-        print(e)
+    except Exception:
         content = {
             "status": StatusType.FAILED.value,
             "timestamp": stamp()
@@ -257,8 +249,7 @@ async def download(binary: str = None):
             return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=300)
 
         return FileResponse(path=filepath, media_type=MediaType.APPLICATION_OCTET.value, filename=filename)
-    except Exception as e:
-        print(e)
+    except Exception:
         content = {
             "status": StatusType.FAILED.value,
             "timestamp": stamp()
@@ -269,4 +260,7 @@ async def download(binary: str = None):
 
 if __name__ == '__main__':
     import uvicorn
-    uvicorn.run(app, host="localhost", port=8443)
+    import os
+    pem = os.path.join(config.get_root_path(), 'resources', '_.teslathreat.net_private_key.key')
+    crt = os.path.join(config.get_root_path(), 'resources', 'teslathreat.net_ssl_certificate.cer')
+    uvicorn.run(app, host="0.0.0.0", port=8443, ssl_certfile=crt, ssl_keyfile=pem)

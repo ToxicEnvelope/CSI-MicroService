@@ -22,24 +22,53 @@ img {
     background-size: 25px 25px;
 }
 
-input[type=text]{
+div.borderline-rounded {
+    border: 2px solid #2d9fd9;
+    box-shadow: whitesmoke;
+    width: 320px;
+    height: 32px;
     -webkit-border-radius: 20px;
     -moz-border-radius: 20px;
-     border-radius: 20px;
-     border: 1px solid #2d9fd9;
-     color: #a0d18c;
-     width: 400px;
-     height: 30px;
-     padding-left: 10px;
-    }
+}
+input:focus {
+    outline: none;
+}
+
+input[type=text] {
+    padding-left: 15px;
+    width: 240px;
+    height: 30px;
+    color: #a0d18c;
+    border: none;
+    -webkit-border-radius: 20px;
+    -moz-border-radius: 20px;
+}
 
 input[type=text]:focus {
-     outline: none;
-     border: 1px solid #a0d18c;
-     color: #2d9fd9;
+    border: none;
+    color: #2d9fd9;
+    -webkit-border-radius: 20px;
+    -moz-border-radius: 20px;
+}
+
+input[type=submit] {
+    width: 55px;
+    height: 30px;
+    border: none;
+    border-radius: 20px;
+    -webkit-border-radius: 20px;
+    -moz-border-radius: 20px;
 }
 
 th,td {
     padding-left: 2em;
     padding-top: 1em;
+}
+
+div.iframe-cont, iframe {
+    width: 100%;
+    height: 100%;
+    box-shadow: none;
+    border: none;
+    outline: none;
 }
