@@ -12,7 +12,7 @@ from os.path import exists
 
 from enums import StatusType, MediaType
 from common.datatypes import Fingerprints, Targets
-from common.database import db_session
+from common.database import db_session, init_db
 from lambdas import gen_UUID, EncodeAES, DecodeAES, EncodeHeader, DecodeHeader, stamp
 from typing import Optional
 from services.ipapi_service import IPAPIService
@@ -25,6 +25,9 @@ app.add_middleware(HTTPSRedirectMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
+if not init_db():
+    raise Exception('could not create db!')
 
 
 @app.middleware('http')

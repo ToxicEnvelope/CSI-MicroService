@@ -15,7 +15,7 @@ Base = declarative_base()
 Base.query = db_session.query_property()
 
 
-def ini_db():
+def init_db():
     try:
         Base.metadata.create_all(bind=__engine)
         print("[+] Connected to Database successfully.")
