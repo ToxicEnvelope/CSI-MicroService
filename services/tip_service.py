@@ -25,12 +25,12 @@ class TIPService(BaseAPI):
     @classmethod
     def check_domain(cls, domain_name=None):
         cls.__domain_to_check__ = domain_name
-        cls.__general_info()
-        cls.__ssl_certificate_chain()
-        cls.__ssl_configuration()
-        cls.__domain_malware_check()
-        cls.__connected_domains()
-        cls.__domain_reputation()
+        cls.__general_info() \
+            .__ssl_certificate_chain() \
+            .__ssl_configuration() \
+            .__domain_malware_check() \
+            .__connected_domains() \
+            .__domain_reputation()
         return cls
 
     @classmethod
@@ -88,4 +88,4 @@ class TIPService(BaseAPI):
 
 if __name__ == '__main__':
     tip = TIPService()
-    print(tip.check_domain("8.8.8.8").gather().preform())
+    print(tip.check_domain("teslathreat.net").gather().preform())
