@@ -29,58 +29,63 @@ templates = Jinja2Templates(directory="templates")
 if not init_db():
     raise Exception('could not create db!')
 
+PAT_INVALID_IP_ADDRESSES = re.compile(r'([a-zA-Z]{9})|(0.0.0.0)|(169.245.*.*)|(255.*.*.*)')
+
 
 @app.middleware('http')
 async def add_fingerprint_record(request: Request, call_next):
     try:
         response: Response = await call_next(request)
+        hostname = None
+        host = request.client.host
+        if not PAT_INVALID_IP_ADDRESSES.match(host):
+            ipapi_data = await ipapi_recon(host)
+            uid = GenUUID(host)
+            ip = ipapi_data['ip'] if 'ip' in ipapi_data else None
+            hostname = ipapi_data['hostname'] if 'hostname' in ipapi_data else None
+            ip_type = ipapi_data['type'] if 'type' in ipapi_data else None
+            continent_code = ipapi_data['continent_code'] if 'continent_code' in ipapi_data else None
+            continent_name = ipapi_data['continent_name'] if 'continent_name' in ipapi_data else None
+            country_code = ipapi_data['country_code'] if 'country_code' in ipapi_data else None
+            country_name = ipapi_data['country_name'] if 'country_name' in ipapi_data else None
+            region_code = ipapi_data['region_code'] if 'region_code' in ipapi_data else None
+            region_name = ipapi_data['region_name'] if 'region_name' in ipapi_data else None
+            city = ipapi_data['city'] if 'city' in ipapi_data else None
+            zipcode = ipapi_data['zip'] if 'zip' in ipapi_data else None
+            latitude = ipapi_data['latitude'] if 'latitude' in ipapi_data else None
+            longitude = ipapi_data['longitude'] if 'longitude' in ipapi_data else None
+            location = ipapi_data['location'] if 'location' in ipapi_data else None
+            security = ipapi_data['security'] if 'security' in ipapi_data else None
 
-        ipapi_data = await ipapi_recon(request.client.host)
-        uid = gen_UUID(request.client.host).__str__()
-        ip = ipapi_data['ip'] if 'ip' in ipapi_data else None
-        hostname = ipapi_data['hostname'] if 'hostname' in ipapi_data else None
-        ip_type = ipapi_data['type'] if 'type' in ipapi_data else None
-        continent_code = ipapi_data['continent_code'] if 'continent_code' in ipapi_data else None
-        continent_name = ipapi_data['continent_name'] if 'continent_name' in ipapi_data else None
-        country_code = ipapi_data['country_code'] if 'country_code' in ipapi_data else None
-        country_name = ipapi_data['country_name'] if 'country_name' in ipapi_data else None
-        region_code = ipapi_data['region_code'] if 'region_code' in ipapi_data else None
-        region_name = ipapi_data['region_name'] if 'region_name' in ipapi_data else None
-        city = ipapi_data['city'] if 'city' in ipapi_data else None
-        zipcode = ipapi_data['zip'] if 'zip' in ipapi_data else None
-        latitude = ipapi_data['latitude'] if 'latitude' in ipapi_data else None
-        longitude = ipapi_data['longitude'] if 'longitude' in ipapi_data else None
-        location = ipapi_data['location'] if 'location' in ipapi_data else None
-        security = ipapi_data['security'] if 'security' in ipapi_data else None
+        if hostname:
+            tip_data = await tip_recon(hostname)
+            infra_analysis = tip_data['infrastructureAnalysis']
+            ssl_cert_chain = tip_data['sslCertificatesChain']
+            ssl_configuration = tip_data['sslConfiguration']
+            malware_check = tip_data['malwareCheck']
+            connected_domains = tip_data['connectedDomains']
+            reputation = tip_data['reputation']
 
-        tip_data = await tip_recon(hostname)
-        infra_analysis = tip_data['infrastructureAnalysis']
-        ssl_cert_chain = tip_data['sslCertificatesChain']
-        ssl_configuration = tip_data['sslConfiguration']
-        malware_check = tip_data['malwareCheck']
-        connected_domains = tip_data['connectedDomains']
-        reputation = tip_data['reputation']
+            req_path = request.url.path
+            req_params = request.url.query
 
-        req_path = request.url.path
-        req_params = request.url.query
-
-        fingerprint = Fingerprints(uid=uid, ip=ip, hostname=hostname, ip_type=ip_type, continent_code=continent_code,
-                                   country_name=country_name, country_code=country_code, continent_name=continent_name,
-                                   region_code=region_code, region_name=region_name, city=city, zipcode=zipcode,
-                                   latitude=latitude, longitude=longitude, location=location, security=security,
-                                   time_created=datetime.now().ctime(), request_path=req_path,
-                                   request_params=req_params, infra_analysis=infra_analysis,
-                                   ssl_cert_chain=ssl_cert_chain, ssl_configuration=ssl_configuration,
-                                   malware_check=malware_check, connected_domains=connected_domains,
-                                   reputation=reputation)
-        db_session.add(fingerprint)
-        db_session.commit()
+            fingerprint = Fingerprints(uid=uid, ip=ip, hostname=hostname, ip_type=ip_type, continent_code=continent_code,
+                                       country_name=country_name, country_code=country_code, continent_name=continent_name,
+                                       region_code=region_code, region_name=region_name, city=city, zipcode=zipcode,
+                                       latitude=latitude, longitude=longitude, location=location, security=security,
+                                       time_created=datetime.now().ctime(), request_path=req_path,
+                                       request_params=req_params, infra_analysis=infra_analysis,
+                                       ssl_cert_chain=ssl_cert_chain, ssl_configuration=ssl_configuration,
+                                       malware_check=malware_check, connected_domains=connected_domains,
+                                       reputation=reputation)
+            db_session.add(fingerprint)
+            db_session.commit()
         return response
     except Exception as e:
         content = {
             "status": StatusType.FAILED.value,
             "host": request.client.host,
-            "timestamp": stamp()
+            "timestamp": DateNow()
         }
         json = jsonable_encoder(obj=content)
         return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=404)
@@ -90,38 +95,41 @@ async def add_fingerprint_record(request: Request, call_next):
 async def add_recon_headers(request: Request, call_next):
     try:
         response: Response = await call_next(request)
-        fingerprint: Optional[Fingerprints] = Fingerprints.query.filter_by(ip=request.client.host).first()
-        if not fingerprint:
-            content = {
-                "status": StatusType.FAILED.value,
-                "timestamp": stamp()
-            }
-            json = jsonable_encoder(obj=content)
-            return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=404)
-        response.headers["X-RECON-Internet-ID"] = fingerprint.uid
-        response.headers["X-RECON-IP"] = EncodeHeader(data=fingerprint.ip).decode()
-        response.headers["X-RECON-CITY"] = EncodeHeader(data=fingerprint.city).decode()
-        response.headers["X-RECON-REGION-CODE"] = EncodeHeader(data=fingerprint.region_code).decode()
-        response.headers["X-RECON-COUNTRY-NAME"] = EncodeHeader(data=fingerprint.country_name).decode()
-        response.headers["X-RECON-COUNTRY-CODE"] = EncodeHeader(data=fingerprint.country_code).decode()
-        response.headers["X-RECON-CONTINENT-CODE"] = EncodeHeader(data=fingerprint.continent_code).decode()
-        response.headers["X-RECON-LATITUDE"] = EncodeHeader(data=fingerprint.latitude).decode()
-        response.headers["X-RECON-LONGITUDE"] = EncodeHeader(data=fingerprint.longitude).decode()
-        response.headers["X-RECON-LOCATION"] = EncodeHeader(data=fingerprint.location).decode()
-        response.headers["X-RECON-SECURITY"] = EncodeHeader(data=fingerprint.security).decode()
-        response.headers["X-RECON-INFRA-ANALYSIS"] = EncodeHeader(data=fingerprint.infra_analysis).decode()
-        response.headers["X-RECON-SSL-CERTIFICATION-CHAIN"] = EncodeHeader(data=fingerprint.ssl_cert_chain).decode()
-        response.headers["X-RECON-SSL-CONFIGURATION"] = EncodeHeader(data=fingerprint.ssl_configuration).decode()
-        response.headers["X-RECON-MALWARE-CHECK"] = EncodeHeader(data=fingerprint.malware_check).decode()
-        response.headers["X-RECON-CONNECTED-DOMAINS"] = EncodeHeader(data=fingerprint.connected_domains).decode()
-        response.headers["X-RECON-REPUTATION"] = EncodeHeader(data=fingerprint.reputation).decode()
+        host = request.client.host
+        if not PAT_INVALID_IP_ADDRESSES.match(host):
+
+            fingerprint: Optional[Fingerprints] = Fingerprints.query.filter_by(ip=host).first()
+            if not fingerprint:
+                content = {
+                    "status": StatusType.FAILED.value,
+                    "timestamp": DateNow()
+                }
+                json = jsonable_encoder(obj=content)
+                return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=404)
+            response.headers["X-RECON-Internet-ID"] = fingerprint.uid
+            response.headers["X-RECON-IP"] = EncodeAES(fingerprint.ip).decode()
+            response.headers["X-RECON-CITY"] = EncodeAES(fingerprint.city).decode()
+            response.headers["X-RECON-REGION-CODE"] = EncodeAES(fingerprint.region_code).decode()
+            response.headers["X-RECON-COUNTRY-NAME"] = EncodeAES(fingerprint.country_name).decode()
+            response.headers["X-RECON-COUNTRY-CODE"] = EncodeAES(fingerprint.country_code).decode()
+            response.headers["X-RECON-CONTINENT-CODE"] = EncodeAES(fingerprint.continent_code).decode()
+            response.headers["X-RECON-LATITUDE"] = EncodeAES(str(fingerprint.latitude)).decode()
+            response.headers["X-RECON-LONGITUDE"] = EncodeAES(str(fingerprint.longitude)).decode()
+            response.headers["X-RECON-LOCATION"] = EncodeAES(str(fingerprint.location)).decode()
+            response.headers["X-RECON-SECURITY"] = EncodeAES(str(fingerprint.security)).decode()
+            response.headers["X-RECON-INFRA-ANALYSIS"] = EncodeAES(str(fingerprint.infra_analysis)).decode()
+            response.headers["X-RECON-SSL-CERTIFICATION-CHAIN"] = EncodeAES(str(fingerprint.ssl_cert_chain)).decode()
+            response.headers["X-RECON-SSL-CONFIGURATION"] = EncodeAES(str(fingerprint.ssl_configuration)).decode()
+            response.headers["X-RECON-MALWARE-CHECK"] = EncodeAES(str(fingerprint.malware_check)).decode()
+            response.headers["X-RECON-CONNECTED-DOMAINS"] = EncodeAES(str(fingerprint.connected_domains)).decode()
+            response.headers["X-RECON-REPUTATION"] = EncodeAES(str(fingerprint.reputation)).decode()
 
         return response
     except Exception:
         content = {
             "status": StatusType.FAILED.value,
             "host": request.client.host,
-            "timestamp": stamp()
+            "timestamp": DateNow()
         }
         json = jsonable_encoder(obj=content)
         return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=404)
@@ -135,7 +143,7 @@ async def ipapi_recon(host, lang='en'):
         content = {
             "status": StatusType.FAILED.value,
             "host": host,
-            "timestamp": stamp()
+            "timestamp": DateNow()
         }
         json = jsonable_encoder(obj=content)
         return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=404)
@@ -149,7 +157,7 @@ async def tip_recon(domain):
         content = {
             "status": StatusType.FAILED.value,
             "host": domain,
-            "timestamp": stamp()
+            "timestamp": DateNow()
         }
         json = jsonable_encoder(obj=content)
         return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=404)
@@ -162,7 +170,7 @@ async def get_fingerprint(request: Request):
         if not fingerprint:
             content = {
                 "status": StatusType.FAILED.value,
-                "timestamp": stamp()
+                "timestamp": DateNow()
             }
             json = jsonable_encoder(obj=content)
             return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=404)
@@ -171,7 +179,7 @@ async def get_fingerprint(request: Request):
     except Exception:
         content = {
             "status": StatusType.FAILED.value,
-            "timestamp": stamp()
+            "timestamp": DateNow()
         }
         json = jsonable_encoder(obj=content)
         return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=404)
@@ -194,22 +202,17 @@ async def task(request: Request, t: str):
 @app.get("/objectify/")
 def objectify(url: str = None, o: str = None, p: str = None, h: str = None):
     try:
-        content = {
-            "status": StatusType.SUCCESS.value,
-            "timestamp": stamp(),
-            "objectified": {
-                "url": url,
-                "o": EncodeHeader(o),
-                "p": EncodeHeader(p),
-                "h": EncodeHeader(h)
-            }
-        }
-        json = jsonable_encoder(obj=content)
-        return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=200)
+        return RedirectResponse(url)
     except Exception:
         content = {
-            "status": StatusType.FAILED.value,
-            "timestamp": stamp()
+            "status": StatusType.SUCCESS.value,
+            "timestamp": DateNow(),
+            "objectified": {
+                "url": EncodeAES(url).decode(),
+                "o": EncodeAES(o).decode(),
+                "p": EncodeAES(p).decode(),
+                "h": EncodeAES(h).decode()
+            }
         }
         json = jsonable_encoder(obj=content)
         return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=404)
@@ -231,7 +234,7 @@ async def installer(request: Request, bindAccount: str = None, token: str = None
     except Exception:
         content = {
             "status": StatusType.FAILED.value,
-            "timestamp": stamp()
+            "timestamp": DateNow()
         }
         json = jsonable_encoder(obj=content)
         return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=404)
@@ -241,11 +244,11 @@ async def installer(request: Request, bindAccount: str = None, token: str = None
 async def download(binary: str = None):
     try:
         filename = f"{binary}.zip"
-        filepath = config.get_payloads(filename)
+        filepath = Config.get_payloads(filename)
         if not exists(filepath):
             content = {
                 "status": StatusType.PENDING.value,
-                "timestamp": stamp()
+                "timestamp": DateNow()
             }
             json = jsonable_encoder(obj=content)
             return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=300)
@@ -254,7 +257,7 @@ async def download(binary: str = None):
     except Exception:
         content = {
             "status": StatusType.FAILED.value,
-            "timestamp": stamp()
+            "timestamp": DateNow()
         }
         json = jsonable_encoder(obj=content)
         return JSONResponse(content=json, media_type=MediaType.APPLICATION_JSON.value, status_code=404)
@@ -262,4 +265,4 @@ async def download(binary: str = None):
 
 if __name__ == '__main__':
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8443)
+    uvicorn.run(app, host="0.0.0.0", port=8443, ssl_keyfile=Config.get_server_key(), ssl_certfile=Config.get_server_crt())
