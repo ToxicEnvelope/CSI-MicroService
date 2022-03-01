@@ -14,12 +14,14 @@ __key__ = get_random_bytes(16)
 __cipher__ = AES.new(__key__, AES.MODE_ECB)
 
 # create_qr_url_svg = lambda h, u: u.svg(f'{config.get_qr_repository()}/{h}.svg', scale=8)
-stamp = lambda: int(time().__str__()[:10])
-gen_UUID = lambda host: uuid5(NAMESPACE_URL, f'{stamp()}')
 # get_qr_image = lambda name: open(f'{config.get_qr_repository()}/{name}.svg', 'r').read()
+DateNow = lambda: datetime.datetime.now().isoformat()
+GenUUID = lambda host: uuid5(NAMESPACE_URL, DateNow()).hex
+EncodeAES = lambda s: b64encode(__cipher__.encrypt(pad(s if isinstance(s, bytes) else s.encode(), AES.block_size)))
+DecodeAES = lambda e: unpad(__cipher__.decrypt(b64decode(e)), AES.block_size)
 
-EncodeAES = lambda s: b64encode(__cipher__.encrypt(s.encode().zfill(16 - len(s))))
-DecodeAES = lambda e: __cipher__.decrypt(b64decode(e))
-
-EncodeHeader = lambda data: b64encode(data.__str__().encode())
-DecodeHeader = lambda data: b64decode(data)
+if __name__ == '__main__':
+    es = EncodeAES("Hello Wrold!")
+    print(es)
+    ds = DecodeAES(es)
+    print(ds)
