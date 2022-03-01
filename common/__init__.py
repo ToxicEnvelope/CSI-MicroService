@@ -4,27 +4,16 @@ from json import load
 __ROOT_DIR__ = dirname(dirname(abspath(__file__)))
 
 
-class Singleton:
-    def __init__(self, cls):
-        self._cls = cls
+class Singleton(type):
+    __instances = {}
 
-    def Instance(self):
-        try:
-            return self._instance
-        except AttributeError:
-            self._instance = self._cls()
-            return self._instance
-
-    def __call__(self):
-        raise TypeError('Singletons must be accessed through `Instance()`.')
-
-    def __instancecheck__(self, inst):
-        return isinstance(inst, self._cls)
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls.__instances:
+            cls.__instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls.__instances[cls]
 
 
-@Singleton
-class Config(object):
-
+class Config(object, metaclass=Singleton):
     @staticmethod
     def get_qr_repository(): return join(__ROOT_DIR__, 'qr_repository')
     @staticmethod
