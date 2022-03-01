@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.responses import FileResponse
@@ -13,12 +13,12 @@ from os.path import exists
 from enums import StatusType, MediaType
 from common.datatypes import Fingerprints, Targets
 from common.database import db_session, init_db
-from lambdas import gen_UUID, EncodeAES, DecodeAES, EncodeHeader, DecodeHeader, stamp
+from lambdas import GenUUID, EncodeAES, DateNow
 from typing import Optional
 from services.ipapi_service import IPAPIService
 from services.tip_service import TIPService
-from common import config
-
+from common import Config
+import re
 
 app = FastAPI()
 app.add_middleware(HTTPSRedirectMiddleware)
