@@ -23,9 +23,9 @@ class Config(object, metaclass=Singleton):
     @staticmethod
     def get_root_path(): return __ROOT_DIR__
     @staticmethod
-    def get_server_crt(): return join(__ROOT_DIR__, 'resources', '.crt')
+    def get_server_crt(): return join(__ROOT_DIR__, 'resources', 'server.crt')
     @staticmethod
-    def get_server_key(): return join(__ROOT_DIR__, 'resources', '.key')
+    def get_server_key(): return join(__ROOT_DIR__, 'resources', 'server.key')
 
     @staticmethod
     def get_ip_api_token():
