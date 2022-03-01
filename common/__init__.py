@@ -20,10 +20,12 @@ class Config(object, metaclass=Singleton):
     def get_host(): return '0.0.0.0'
     @staticmethod
     def get_port(): return 41514
-
     @staticmethod
-    def get_root_path():
-        return __ROOT_DIR__
+    def get_root_path(): return __ROOT_DIR__
+    @staticmethod
+    def get_server_crt(): return join(__ROOT_DIR__, 'resources', '.crt')
+    @staticmethod
+    def get_server_key(): return join(__ROOT_DIR__, 'resources', '.key')
 
     @staticmethod
     def get_ip_api_token():
