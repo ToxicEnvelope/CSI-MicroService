@@ -42,10 +42,3 @@ class Config(object, metaclass=Singleton):
     @staticmethod
     def get_payloads(payload_name):
         return join(__ROOT_DIR__, "payloads", payload_name)
-
-global config
-config = Config.Instance()
-
-if __name__ == '__main__':
-    print(config.get_connection_string())
-    print(config.get_ip_api_token())
