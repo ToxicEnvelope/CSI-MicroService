@@ -1,9 +1,10 @@
-from time import time
+import datetime
 from uuid import uuid5, NAMESPACE_URL
-from common import config
 from base64 import b64decode, b64encode
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
+from Crypto.Util.Padding import pad, unpad
+# from common import config
 # from pyqrcode import QRCode
 # import pyqrcode
 # import png
