@@ -11,7 +11,7 @@ from Crypto.Util.Padding import pad, unpad
 
 
 __key__ = get_random_bytes(16)
-__cipher__ = AES.new(__key__, AES.MODE_CBC)
+__cipher__ = AES.new(__key__, AES.MODE_ECB)
 
 # create_qr_url_svg = lambda h, u: u.svg(f'{config.get_qr_repository()}/{h}.svg', scale=8)
 stamp = lambda: int(time().__str__()[:10])
