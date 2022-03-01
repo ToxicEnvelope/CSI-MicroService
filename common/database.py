@@ -8,7 +8,12 @@ root = config.get_root_path()
 print("[+] Connection String: " + root)
 print("[+] Exists ? ", os.path.exists(root))
 
-__engine = create_engine(f"sqlite:////{root}/cross-domain-service.db", convert_unicode=True)
+if os.name != 'nt':
+    db_sc = "sqlite:////%s/cross-domain-service.db" % root
+else:
+    db_sc = r"sqlite:///%s\cross-domain-service.db" % root
+
+__engine = create_engine(db_sc, convert_unicode=True)
 db_session = scoped_session(sessionmaker(bind=__engine, autocommit=False, autoflush=False))
 
 Base = declarative_base()
