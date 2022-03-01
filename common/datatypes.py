@@ -4,7 +4,7 @@ from sqlalchemy import Column, Text, JSON, Float, DateTime
 from common.database import Base
 from datetime import datetime
 from uuid import uuid5, NAMESPACE_URL
-from lambdas import stamp
+from lambdas import DateNow
 
 
 class Fingerprints(Base):
@@ -80,7 +80,7 @@ class Targets(Base):
     token = Column(Text(), unique=False, nullable=False)
 
     def __init__(self, email=None, first_name=None, last_name=None, token=None):
-        self.tid = uuid5(NAMESPACE_URL, f'{email}-{stamp()}').__str__()
+        self.tid = uuid5(NAMESPACE_URL, f'{email}-{DateNow()}').__str__()
         self.email = email
         self.first_name = first_name
         self.last_name = last_name

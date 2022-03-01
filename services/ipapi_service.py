@@ -1,9 +1,9 @@
 from services import BaseAPI
-from common import config
+from common import Config
 
 
 class IPAPIService(BaseAPI):
-    __TOKEN__ = "?access_key=" + config.get_ip_api_token()
+    __TOKEN__ = "?access_key=" + Config.get_ip_api_token()
     __BASE_URL__ = BaseAPI.__HTTP__ + "api.ipapi.com/api"
     __XML_OUT__ = "&output=xml"
     __JSON_OUT__ = "&output=json"

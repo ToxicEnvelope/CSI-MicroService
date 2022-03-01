@@ -1,9 +1,9 @@
 from services import BaseAPI
-from common import config
+from common import Config
 
 
 class TIPService(BaseAPI):
-    __TOKEN__ = "&apiKey=" + config.get_tip_api_token()
+    __TOKEN__ = "&apiKey=" + Config.get_tip_api_token()
     __BASE_URL__ = BaseAPI.__HTTPS__ + "api.threatintelligenceplatform.com/v1"
     __GENERAL_INFO__ = f"{__BASE_URL__}/infrastructureAnalysis?domainName="
     __SSL_CERT_CHAIN__ = f"{__BASE_URL__}/sslCertificatesChain?domainName="

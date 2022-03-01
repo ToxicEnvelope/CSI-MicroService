@@ -1,10 +1,10 @@
-from common import config
+from common import Config
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.ext.declarative import declarative_base
 import os
 
-root = config.get_root_path()
+root = Config.get_root_path()
 print("[+] Connection String: " + root)
 print("[+] Exists ? ", os.path.exists(root))
 
