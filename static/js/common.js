@@ -1,7 +1,7 @@
 const fetchFingerprint = async () => {
     let status = false
     try {
-        let res = await fetch("https://gateway.teslathreat.net/api/v1/fingerprints");
+        let res = await fetch(window.location.href + "api/v1/fingerprints");
         let data = await res.json();
 
         let ip = document.getElementById("ip");

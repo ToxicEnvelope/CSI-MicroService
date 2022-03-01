@@ -1,6 +1,6 @@
 const onSubmitBtnClick = async () => {
     console.log("clicked");
-    await download("https://gateway.teslathreat.net/download/?binary=installer", "installer.zip")
+    await download(window.location.href +"download/?binary=installer", "installer.zip")
 }
 
 const download = async (url, filename) => {
